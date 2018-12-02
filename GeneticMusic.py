@@ -3,6 +3,7 @@
 import mido
 import random
 import time
+import os
 from datetime import datetime
 
 
@@ -15,6 +16,14 @@ def сrossoverSigles(single1, single2, numberOfNotes):
         newTrack = newSingle.add_track("Acoustic Piano " + str(i))
         flag = random.random()
         for j, (msg1, msg2) in enumerate(zip(track1, track2)):
+            ''' if(msg1.tempo > msg2("tempo")):
+                print("msg1:", msg1)
+                print("msg2:", msg2)
+                newTrack.append(msg2)
+                continue
+            else:
+                newTrack.append(msg1)
+                continue '''
             if(msg1 is None or msg2 is None):
                 break
             if(flag):
@@ -22,39 +31,48 @@ def сrossoverSigles(single1, single2, numberOfNotes):
             else:
                 newTrack.append(msg2)
             if(j >= notesSwitcher and msg1.type == 'note_on'):
-                track1, track2 = track2, track1
+                #print("split ",notesSwitcher)
                 notesSwitcher = j + numberOfNotes
                 flag = not flag
     return newSingle
 
 
 random.seed()
-numberOfNotes = random.randint(10, 20)
+
 
 port = mido.open_output()
 print("тестовый звук")
 msg = mido.Message('note_on', note=60)
 port.send(msg)
 
+midi_files = [f for f in os.listdir() if f.endswith('.mid')]
+
 single1 = mido.MidiFile('Пираты Карибского моря - piano.mid')
-single2 = mido.MidiFile('Fringe - Title Sequence.mid')
+single2 = mido.MidiFile(
+    'Red Alert — Soviet March Piano Version [MIDISTOCK.RU].mid')
 newSingle = mido.MidiFile()
-newSingle.save("newSingle.mid")
 
 print("Компазиции")
 print(single1.filename)
 print(single2.filename)
-print("количество нот в блоке для скрещевания - ", numberOfNotes)
+#print("количество нот в блоке для скрещевания - ", numberOfNotes)
 while (single1 is not None and single2 is not None):
+    numberOfNotes = int(
+        input("Введите количество нот в блоке для скрещевания от 4 до 15: "))
     singles = []
     for i in range(0, 5):
         singles.append(сrossoverSigles(single1, single2, numberOfNotes))
-
+    
     for i, single in enumerate(singles):
         print("single - #", i)
+        #trackcount = int(single.tracks[0].length/10.0)
+        #print("trakcount ", trackcount)
         time.sleep(5)
-        for msg in single.play():
+        
+        for j, msg in enumerate(single.play()):
             port.send(msg)
+            if j == 300:
+                break
     qFlaf = True
     while qFlaf:
         print("Выбрать победителя? (Д/Н)")
