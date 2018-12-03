@@ -42,16 +42,22 @@ def сrossoverSigles2(single1, single2, numberOfNotes):
         if(track1 is None or track1 is None):
             break
         newTrack = newSingle.add_track("Acoustic Piano " + str(i))
+        #print(newTrack.name)
         flag = random.random()
         for j, (msg1, msg2) in enumerate(zip(track1, track2)):
             if(msg1 is None or msg2 is None):
                 break
             if(flag):
                 newTrack.append(msg1)
+                #print(msg1)
             else:
                 newTrack.append(msg2)
-            if(j >= numberOfNotes and msg1.type == 'note_on'):
+                #print(msg2)
+            if(numberOfNotes != -1 and j >= numberOfNotes):
+                print("switch")
                 flag = not flag
+                numberOfNotes = -1
+            
     return newSingle
 
 
@@ -65,9 +71,9 @@ port.send(msg)
 
 midi_files = [f for f in os.listdir() if f.endswith('.mid')]
 
-single1 = mido.MidiFile('Пираты Карибского моря - piano.mid')
+single1 = mido.MidiFile('kalinka.mid')
 single2 = mido.MidiFile(
-    'Red Alert — Soviet March Piano Version [MIDISTOCK.RU].mid')
+    'Во поле береза стояла.mid')
 newSingle = mido.MidiFile()
 
 print("Компазиции")
@@ -79,7 +85,7 @@ while (single1 is not None and single2 is not None):
     #    input("Введите количество нот в блоке для скрещевания от 4 до 15: "))
     singles = []
     for i in range(0, 4):
-        singles.append(сrossoverSigles(single1, single2, random.randint(4,15)))
+        singles.append(сrossoverSigles2(single1, single2, random.randint(5,300)))
     
     for i, single in enumerate(singles):
         print("single - #", i)
@@ -89,8 +95,8 @@ while (single1 is not None and single2 is not None):
         
         for j, msg in enumerate(single.play()):
             port.send(msg)
-            if j == 300:
-                break
+            #if j == 300:
+            #    break
     qFlaf = True
     while qFlaf:
         print("Выбрать победителя? (Д/Н)")
