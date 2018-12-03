@@ -36,11 +36,29 @@ def сrossoverSigles(single1, single2, numberOfNotes):
                 flag = not flag
     return newSingle
 
+def сrossoverSigles2(single1, single2, numberOfNotes):
+    newSingle = mido.MidiFile()
+    for i, (track1, track2) in enumerate(zip(single1.tracks, single2.tracks)):
+        if(track1 is None or track1 is None):
+            break
+        newTrack = newSingle.add_track("Acoustic Piano " + str(i))
+        flag = random.random()
+        for j, (msg1, msg2) in enumerate(zip(track1, track2)):
+            if(msg1 is None or msg2 is None):
+                break
+            if(flag):
+                newTrack.append(msg1)
+            else:
+                newTrack.append(msg2)
+            if(j >= numberOfNotes and msg1.type == 'note_on'):
+                flag = not flag
+    return newSingle
+
+
 
 random.seed()
 
-
-port = mido.open_output()
+port = mido.open_output(mido.get_output_names()[0])
 print("тестовый звук")
 msg = mido.Message('note_on', note=60)
 port.send(msg)
@@ -57,17 +75,17 @@ print(single1.filename)
 print(single2.filename)
 #print("количество нот в блоке для скрещевания - ", numberOfNotes)
 while (single1 is not None and single2 is not None):
-    numberOfNotes = int(
-        input("Введите количество нот в блоке для скрещевания от 4 до 15: "))
+    #numberOfNotes = int(
+    #    input("Введите количество нот в блоке для скрещевания от 4 до 15: "))
     singles = []
-    for i in range(0, 5):
-        singles.append(сrossoverSigles(single1, single2, numberOfNotes))
+    for i in range(0, 4):
+        singles.append(сrossoverSigles(single1, single2, random.randint(4,15)))
     
     for i, single in enumerate(singles):
         print("single - #", i)
         #trackcount = int(single.tracks[0].length/10.0)
         #print("trakcount ", trackcount)
-        time.sleep(5)
+        time.sleep(3)
         
         for j, msg in enumerate(single.play()):
             port.send(msg)
@@ -79,13 +97,17 @@ while (single1 is not None and single2 is not None):
         s = input().lower()
         if(s == 'д' or s == 'y'):
             print("Выберете композицию и напишите номер")
-            single1 = singles[int(input())]
-            single2 = None
+            try:
+                single1 = singles[int(input())]
+                single2 = None
+            except Exception:
+                print("введите корректный номер")
+                continue
             break
         print("Выберете 2 композиции и напишите их номер через пробел")
         try:
             (selectSingle1, selectSingle2) = list(map(int, input().split()))
-        except ValueError:
+        except Exception:
             print("выберете только 2 победителей")
             continue
         single1 = singles[selectSingle1]
