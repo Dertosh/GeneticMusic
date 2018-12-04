@@ -139,13 +139,10 @@ def main(argv=None):
         
         for i, single in enumerate(singles):
             print("single - #", i)
-            #trackcount = int(single.tracks[0].length/10.0)
-            #print("trakcount ", trackcount)
             time.sleep(3)
-            
             for j, msg in enumerate(single.play()):
                 port.send(msg)
-                if(kbhit() and ord(getch()) == 27):
+                if(kbhit() and ord(getch()) == 27): #пропустить проигрование трека
                     break
         qFlaf = True
         while qFlaf:
