@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
 
+import sys
+import getopt
 import mido
 import random
 import time
 import os
 from datetime import datetime
+from msvcrt import getch, kbhit
+class Usage(Exception):
+    def __init__(self, msg):
+        self.msg = msg
 
 
 def сrossoverSigles(single1, single2, numberOfNotes):
@@ -60,6 +66,7 @@ def сrossoverSigles2(single1, single2, numberOfNotes):
             
     return newSingle
 
+#Равномерное скрещивание
 def сrossoverSigles3(single1, single2, numberOfNotes):
     newSingle = mido.MidiFile()
     print("switch", numberOfNotes)
@@ -67,96 +74,110 @@ def сrossoverSigles3(single1, single2, numberOfNotes):
         if(track1 is None or track1 is None):
             break
         newTrack = newSingle.add_track("Acoustic Piano " + str(i))
-        #print(newTrack.name)
         flag = random.random()
+        print("track ",i)
         for j, (msg1, msg2) in enumerate(zip(track1, track2)):
             if(msg1 is None or msg2 is None):
                 break
             if(flag):
                 newTrack.append(msg1)
-                #print(msg1)
+                print(msg1)
             else:
                 newTrack.append(msg2)
-                #print(msg2)
-            if(j>10 and not (j % numberOfNotes)and random.random()):
-                #print("switch", numberOfNotes)
+                print(msg2)
+            if(j>10 and not (j % numberOfNotes)and random.random()):#меняем дорожку после каждого j вызова
                 flag = not flag
             
     return newSingle
 
 
-
-random.seed()
-
-port = mido.open_output(mido.get_output_names()[0])
-print("тестовый звук")
-msg = mido.Message('note_on', note=60)
-port.send(msg)
-
-midi_files = [f for f in os.listdir() if f.endswith('.mid')]
-
-single1 = mido.MidiFile('kalinka.mid')
-single2 = mido.MidiFile(
-    'Во поле береза стояла.mid')
-newSingle = mido.MidiFile()
-
-print("Компазиции")
-print(single1.filename)
-print(single2.filename)
-#print("количество нот в блоке для скрещевания - ", numberOfNotes)
-while (single1 is not None and single2 is not None):
-    #numberOfNotes = int(
-    #    input("Введите количество нот в блоке для скрещевания от 4 до 15: "))
-    singles = []
-    for i in range(0, 4):
-        singles.append(сrossoverSigles3(single1, single2, random.randint(2,10)))
-    
-    for i, single in enumerate(singles):
-        print("single - #", i)
-        #trackcount = int(single.tracks[0].length/10.0)
-        #print("trakcount ", trackcount)
-        time.sleep(3)
-        
-        for j, msg in enumerate(single.play()):
-            port.send(msg)
-            #if j == 300:
-            #    break
-    qFlaf = True
-    while qFlaf:
-        print("Выбрать победителя? (Д/Н)")
-        s = input().lower()
-        if(s == 'д' or s == 'y'):
-            print("Выберете композицию и напишите номер")
-            try:
-                single1 = singles[int(input())]
-                single2 = None
-            except Exception:
-                print("введите корректный номер")
-                continue
-            break
-        print("Выберете 2 композиции и напишите их номер через пробел")
+def main(argv=None):
+    single1 = None
+    single2 = None
+    if argv is None:
+        argv = sys.argv
+    try:
         try:
-            (selectSingle1, selectSingle2) = list(map(int, input().split()))
-        except Exception:
-            print("выберете только 2 победителей")
-            continue
-        single1 = singles[selectSingle1]
-        single2 = singles[selectSingle2]
-        qFlaf = False
+            opts, args = getopt.getopt(
+                argv[1:], "hl:r:", ["help", "left=", "right=", ])
+        except getopt.GetoptError:
+            print(argv[0], ' -l <file_1.mid> -r <file_2.mid>')
+            sys.exit(2)
+        for opt, arg in opts:
+            if opt == '-h':
+                print(argv[0], ' -l <file_1.mid> -r <file_2.mid>')
+                sys.exit()
+            elif opt in ("-l", "--left"):
+                if(arg == ""):
+                    raise Exception("-l "+arg)
+                single1 = mido.MidiFile(arg)
+            elif opt in ("-r", "--right"):
+                if(arg == ""):
+                    raise Exception("-r"+arg)
+                single2 = mido.MidiFile(arg)
+        # more code, unchanged
+    except Exception as e:
+        print(str(e))
+        print("for help use --help")
+        return 2
+    random.seed()
 
-print("winer!")
-for msg in single1.play():
+    port = mido.open_output(mido.get_output_names()[0])
+    print("тестовый звук")
+    msg = mido.Message('note_on', note=60)
     port.send(msg)
-single1.save("winer_" + datetime.strftime(datetime.now(),
-                                          "%Y-%m-%d %H.%M.%S") + ".mid")
+    
+    print("Компазиции")
+    print(single1.filename)
+    print(single2.filename)
+    #print("количество нот в блоке для скрещевания - ", numberOfNotes)
+    while (single1 is not None and single2 is not None):
+        singles = []
+        for i in range(0, 4):
+            print("single ",i)
+            singles.append(сrossoverSigles3(single1, single2, random.randint(2,10)))
+        
+        for i, single in enumerate(singles):
+            print("single - #", i)
+            #trackcount = int(single.tracks[0].length/10.0)
+            #print("trakcount ", trackcount)
+            time.sleep(3)
+            
+            for j, msg in enumerate(single.play()):
+                port.send(msg)
+                if(kbhit() and ord(getch()) == 27):
+                    break
+        qFlaf = True
+        while qFlaf:
+            print("Выбрать победителя? (Д/Н)")
+            s = input().lower()
+            if(s == 'д' or s == 'y'):
+                print("Выберете композицию и напишите номер")
+                try:
+                    single1 = singles[int(input())]
+                    single2 = None
+                except Exception:
+                    print("введите корректный номер")
+                    continue
+                break
+            print("Выберете 2 композиции и напишите их номер через пробел")
+            try:
+                (selectSingle1, selectSingle2) = list(map(int, input().split()))
+            except Exception:
+                print("выберете только 2 победителей")
+                continue
+            single1 = singles[selectSingle1]
+            single2 = singles[selectSingle2]
+            qFlaf = False
 
-# print(msg)
+    print("winer!")
+    print("Пропустить композицию - клавиша 'ESC'")
+    for msg in single1.play():
+        port.send(msg)
+        if(kbhit() and ord(getch()) == 27):
+            break
+    single1.save("winer_" + datetime.strftime(datetime.now(),
+                                            "%Y-%m-%d %H.%M.%S") + ".mid")
 
-""" for track in single1.tracks:
-    print('Track: {}'.format(track.name))
-    # for msg in track:
-    # print(msg)
-    #    port.send(msg)
-print(single2.filename)
-for track in single2.tracks:
-    print('Track: {}'.format(track.count)) """
+if __name__ == "__main__":
+    exit(main())
