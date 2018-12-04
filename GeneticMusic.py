@@ -109,11 +109,11 @@ def main(argv=None):
                 sys.exit()
             elif opt in ("-l", "--left"):
                 if(arg == ""):
-                    raise Exception("-l "+arg)
+                    raise Exception("-l no parametr"+arg)
                 single1 = mido.MidiFile(arg)
             elif opt in ("-r", "--right"):
                 if(arg == ""):
-                    raise Exception("-r"+arg)
+                    raise Exception("-r no parametr"+arg)
                 single2 = mido.MidiFile(arg)
         # more code, unchanged
     except Exception as e:
