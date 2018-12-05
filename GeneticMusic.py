@@ -7,11 +7,7 @@ import random
 import time
 import os
 from datetime import datetime
-from msvcrt import getch, kbhit
-class Usage(Exception):
-    def __init__(self, msg):
-        self.msg = msg
-
+import keyboard
 
 def сrossoverSigles(single1, single2, numberOfNotes):
     newSingle = mido.MidiFile()
@@ -142,7 +138,7 @@ def main(argv=None):
             time.sleep(3)
             for j, msg in enumerate(single.play()):
                 port.send(msg)
-                if(kbhit() and ord(getch()) == 27): #пропустить проигрование трека
+                if(keyboard.is_pressed('q')): #пропустить проигрование трека
                     break
         qFlaf = True
         while qFlaf:
@@ -171,7 +167,7 @@ def main(argv=None):
     print("Пропустить композицию - клавиша 'ESC'")
     for msg in single1.play():
         port.send(msg)
-        if(kbhit() and ord(getch()) == 27):
+        if(keyboard.is_pressed('q')):
             break
     single1.save("winer_" + datetime.strftime(datetime.now(),
                                             "%Y-%m-%d %H.%M.%S") + ".mid")
