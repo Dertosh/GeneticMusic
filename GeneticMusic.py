@@ -77,10 +77,10 @@ def сrossoverSigles3(single1, single2, numberOfNotes):
                 break
             if(flag):
                 newTrack.append(msg1)
-                print(msg1)
+                #print(msg1)
             else:
                 newTrack.append(msg2)
-                print(msg2)
+                #print(msg2)
             if(j>10 and not (j % numberOfNotes)and random.random()):#меняем дорожку после каждого j вызова
                 flag = not flag
             
@@ -95,7 +95,7 @@ def main(argv=None):
     try:
         try:
             opts, args = getopt.getopt(
-                argv[1:], "hl:r:", ["help", "left=", "right=", ])
+                argv[1:], "hl:r:", ["help", "left=", "right=" ])
         except getopt.GetoptError:
             print(argv[0], ' -l <file_1.mid> -r <file_2.mid>')
             sys.exit(2)
@@ -108,8 +108,9 @@ def main(argv=None):
                     raise Exception("-l no parametr"+arg)
                 single1 = mido.MidiFile(arg)
             elif opt in ("-r", "--right"):
-                if(arg == ""):
+                if(arg == "" or arg is None):
                     raise Exception("-r no parametr"+arg)
+                print("arg:",arg,".")
                 single2 = mido.MidiFile(arg)
         # more code, unchanged
     except Exception as e:
@@ -120,9 +121,14 @@ def main(argv=None):
 
     port = mido.open_output(mido.get_output_names()[0])
     print("тестовый звук")
-    msg = mido.Message('note_on', note=60)
+    msg = mido.Message('note_on', note=60, velocity=80)
     port.send(msg)
     
+    for msg in single1.tracks[0]:
+        print(msg)
+        port.send(msg)
+        #keyboard.wait(hotkey='esc')
+
     print("Компазиции")
     print(single1.filename)
     print(single2.filename)
@@ -138,7 +144,7 @@ def main(argv=None):
             time.sleep(3)
             for j, msg in enumerate(single.play()):
                 port.send(msg)
-                if(keyboard.is_pressed('q')): #пропустить проигрование трека
+                if(keyboard.is_pressed('esc')): #пропустить проигрование трека
                     break
         qFlaf = True
         while qFlaf:
@@ -167,7 +173,7 @@ def main(argv=None):
     print("Пропустить композицию - клавиша 'ESC'")
     for msg in single1.play():
         port.send(msg)
-        if(keyboard.is_pressed('q')):
+        if(keyboard.is_pressed('esc')):
             break
     single1.save("winer_" + datetime.strftime(datetime.now(),
                                             "%Y-%m-%d %H.%M.%S") + ".mid")

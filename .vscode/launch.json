@@ -10,7 +10,7 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
-            "args": ["-l","kalinka.mid","-r" ,"Во поле береза стояла.mid"],
+            "args": ["-l", "Fringe - Title Sequence.mid", "-r", "Во поле береза стояла.mid"],
             "console": "integratedTerminal"
         },
         {
@@ -60,7 +60,7 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
-            "args": ["-l", "kalinka.mid", "-r", "Во поле береза стояла.mid"],
+            "args": ["-l", "Fringe - Title Sequence.mid", "-r", "Во поле береза стояла.mid"],
             "console": "externalTerminal"
         }
     ]
