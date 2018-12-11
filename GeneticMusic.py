@@ -86,6 +86,56 @@ def сrossoverSigles3(single1, single2, numberOfNotes):
             
     return newSingle
 
+def track_info(track, debug=False):
+    time_sum = 0
+    sign = None
+    for msg in track:
+        if(debug):
+            print(msg)
+        if(not msg.is_meta):
+            time_sum += msg.time
+        else:
+            if(msg.type == "time_signature"):
+                sign = msg
+    return time_sum, sign
+
+def beats(single):
+    time_max = 0;
+    tact_size = 0;
+    print("ticks_per_beat", single.ticks_per_beat)
+    print("meta", single.tracks[0][2].dict().get('type'))
+    print("meta", single.tracks[0][3].dict())
+    for track in single.tracks:
+        time, sign = track_info(track)
+        if(sign is not None):
+            tact_size = 1920/sign.denominator*sign.numerator #1920 тиков в целой делим на размер
+        if(time>time_max):
+            time_max = time
+        print("meta", sign)
+    return time_max / tact_size
+
+def takts_check(track,debug=False):   
+    time_sum = 0
+    time_min = 1000000000000000000
+    time_max = 0
+    for msg in track:
+        if(debug):
+            print(msg)
+        if(not msg.is_meta):
+            time_sum += msg.time
+            if(msg.time != 0 and msg.time < time_min):
+                time_min = msg.time
+            if(msg.time > time_max):
+                time_max = msg.time
+        #keyboard.wait(hotkey='esc')
+
+    print("TimeSum:", time_sum)
+    print("TimeMin:", time_min) 
+    print("TimeMax:", time_max)
+
+    if(time_sum % time_max == 0):
+        print("Тиков в такте", time_max)
+        print("тактов:", time_sum / time_max)
 
 def main(argv=None):
     single1 = None
@@ -123,15 +173,26 @@ def main(argv=None):
     print("тестовый звук")
     msg = mido.Message('note_on', note=60, velocity=80)
     port.send(msg)
-    
-    for msg in single1.tracks[0]:
-        print(msg)
-        port.send(msg)
-        #keyboard.wait(hotkey='esc')
 
+    
     print("Компазиции")
+
     print(single1.filename)
+    print("single length ", single1.length)
+    print("Beats:", beats(single1))
+
+    for track in single1.tracks:
+        print(str(track),'\n')
+        takts_check(track,True)
+    
     print(single2.filename)
+    print("single length ", single2.length)
+
+    print("Beats:",beats(single2))
+    for track in single2.tracks:
+        print(str(track),'\n')
+        takts_check(track)
+    
     #print("количество нот в блоке для скрещевания - ", numberOfNotes)
     while (single1 is not None and single2 is not None):
         singles = []
