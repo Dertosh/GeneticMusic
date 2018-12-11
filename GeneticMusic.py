@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 
-import sys
 import getopt
-import mido
-import random
-import time
 import os
+import random
+import sys
+import time
 from datetime import datetime
+
 import keyboard
+import mido
+
 
 def сrossoverSigles(single1, single2, numberOfNotes):
     newSingle = mido.MidiFile()
@@ -100,19 +102,21 @@ def track_info(track, debug=False):
     return time_sum, sign
 
 def beats(single):
-    time_max = 0;
-    tact_size = 0;
-    print("ticks_per_beat", single.ticks_per_beat)
-    print("meta", single.tracks[0][2].dict().get('type'))
-    print("meta", single.tracks[0][3].dict())
+    time_max = 0
+    tact_size = 0
+    numerator = 0
+    denominator = 0
+    
     for track in single.tracks:
         time, sign = track_info(track)
         if(sign is not None):
             tact_size = 1920/sign.denominator*sign.numerator #1920 тиков в целой делим на размер
+            denominator = sign.denominator
+            numerator = sign.numerator
         if(time>time_max):
             time_max = time
         print("meta", sign)
-    return time_max / tact_size
+    return time_max / tact_size, tact_size, numerator, denominator
 
 def takts_check(track,debug=False):   
     time_sum = 0
@@ -136,6 +140,71 @@ def takts_check(track,debug=False):
     if(time_sum % time_max == 0):
         print("Тиков в такте", time_max)
         print("тактов:", time_sum / time_max)
+
+
+def get_tacts(track,tact_size):
+    tacts = []
+    tact = []
+    tickts = 0
+
+    for msg in track:
+        if(tickts >= tact_size and msg.type == 'note_on' and len(tact) > 0):
+            tacts.append(tact)
+            tact = []
+            tickts = 0
+        tact.append(msg)
+        tickts += msg.time
+    tacts.append(tact)
+
+    return tacts
+
+
+def change_time_signature(track, numerator, denominator):
+    for i, msg in enumerate(track):
+        if(msg.is_meta and msg.type == "time_signature"):
+            temp = msg.dict()
+            temp.update({"numerator": numerator, "denominator":denominator})
+            track.remove(msg)
+            track.insert(i, mido.MetaMessage.from_dict(temp))
+            break
+        if(i>10):
+            break
+        
+
+            
+
+
+def сrossoverSigles4(single1, single2):
+    tact_size = 0 #размер такта
+    tacts_num = 0 #количество тактов
+    single1_info1 = beats(single1)
+    single1_info2 = beats(single2)
+    numerator = 0
+    denominator = 0
+
+    if(single1_info1[1] > single1_info2[1]):
+        tacts_num, tact_size, numerator, denominator = single1_info1
+    else:
+        tacts_num, tact_size, numerator, denominator = single1_info2
+    mask = 0
+    mask_end = 2**tacts_num
+    for track1, track2 in zip(single1.tracks, single2.tracks):
+        change_time_signature(track1,numerator,denominator)
+        print("track1")
+        for msg in track1[:5]:
+            print(msg)
+       
+        change_time_signature(track2,numerator,denominator) 
+        print("track2")
+        for msg in track2[:5]:
+            print(msg)
+
+        for i, (tact1, tact2) in enumerate(zip(get_tacts(track1, tact_size), get_tacts(track2, tact_size))):
+            break
+
+        
+    
+
 
 def main(argv=None):
     single1 = None
@@ -183,7 +252,7 @@ def main(argv=None):
 
     for track in single1.tracks:
         print(str(track),'\n')
-        takts_check(track,True)
+        takts_check(track)
     
     print(single2.filename)
     print("single length ", single2.length)
@@ -192,7 +261,7 @@ def main(argv=None):
     for track in single2.tracks:
         print(str(track),'\n')
         takts_check(track)
-    
+    сrossoverSigles4(single1,single2)
     #print("количество нот в блоке для скрещевания - ", numberOfNotes)
     while (single1 is not None and single2 is not None):
         singles = []
