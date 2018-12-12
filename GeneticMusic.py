@@ -321,7 +321,7 @@ def main(argv=None):
         print(str(e))
         print("for help use --help")
         return 2
-        
+
     random.seed()
 
     port = mido.open_output(mido.get_output_names()[0])
@@ -340,7 +340,7 @@ def main(argv=None):
     print("single length ", single2.length)
     print("Beats:",beats(single2))
 
-    singles = сrossoverSigles4(single1,single2,2)
+    singles = сrossoverSigles4(single1,single2,3)
     time.sleep(2)
     print("Итоговое количество синглов", len(singles))
     print("Для пропуска композиции нажмите на клавишу <esc>")
@@ -352,8 +352,10 @@ def main(argv=None):
             if(keyboard.is_pressed('esc')):  # пропустить проигрование трека
                 keyboard.release('esc')
                 break
-    single.save("winer_" + datetime.strftime(datetime.now(),
+        single.save("winer_" + datetime.strftime(datetime.now(),
                                               "%Y-%m-%d %H.%M.%S") + ".mid")
+    else:
+        print("С такими параметрами компазиций нет!")
     print("Ожидание 'ESC'")
     time.sleep(3)
     keyboard.wait('esc')
