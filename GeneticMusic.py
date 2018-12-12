@@ -197,6 +197,10 @@ def check_tacts(tact1,tact2):
             score+=1
     return score
 
+def copy_track(to_track, from_track):
+    for msg in to_track:
+        from_track.append(msg)
+
 def сrossoverSigles4(single1, single2,score_filter=0):
     """Равномерное скрещивание"""
     tact_size = 0 #размер такта
@@ -214,9 +218,10 @@ def сrossoverSigles4(single1, single2,score_filter=0):
     track_size = tact_size * tacts_num
 
     print("tacts =",tacts_num)
-    mask_end = int(2**tacts_num - 1)
+    mask_end = int(2**tacts_num - 2)
     print("mask_end", mask_end)
     singles = [mido.MidiFile() for i in range(mask_end)]
+    print("количество комбинаций",len(singles))
     for j, (track1, track2) in enumerate(zip(single1.tracks, single2.tracks)):
 
         change_time_signature(track1,numerator,denominator)
@@ -226,7 +231,7 @@ def сrossoverSigles4(single1, single2,score_filter=0):
         if(j == 0):
             n = int(0) 
             n_end = int(tacts_num)
-            while (mask < len(singles)):
+            for mask in range(1,mask_end+1):
                 new_track=singles[int(mask-1)].add_track("Acoustic Piano " + str(j))
                 for i, (tact1, tact2) in enumerate(zip(get_tacts(track1, tact_size), get_tacts(track2, tact_size))):
                     try:
@@ -236,44 +241,48 @@ def сrossoverSigles4(single1, single2,score_filter=0):
                             add_tact(new_track, tact2)
                     except IndexError:
                         add_tact(new_track, tact2)
-                """ for single in singles:
-                    track = single.add_track("Acoustic Piano " + str(j))
-                    #for msg in newTrack:
-                    track.append(new_track) """
-                mask+=1
-                if(mask/tacts_num % 1000 == 0):
+                if(mask % 1000 == 0):
                     print("n =", mask, "track1")
                 n=n_end
                 n_end += tacts_num
         else:
             n = 0
-            n_end = int(tacts_num)
             step = int(j * tacts_num)
-            while (mask < len(singles)):
-                new_track = singles[n].add_track("Acoustic Piano " + str(j))
-                for i, (tact1, tact2, tact3) in enumerate(zip(get_tacts(track1, tact_size), get_tacts(track2, tact_size), get_tacts(singles[n].tracks[0], tact_size))):
-                    try:
-                        if(str(mask)[i] == '1'):
-                            if(check_tacts(tact3,tact1)>=score_filter):
-                                add_tact(new_track, tact1)
-                        else:
+            for mask in range(1, mask_end + 1):
+                for t in range(0,mask_end):
+                    temp_track = singles[n].tracks[0]
+                    new_track = singles[n].add_track("Acoustic Piano " + str(j))
+                    singles.append(mido.MidiFile())
+                    singles[len(singles)-1].tracks.append(temp_track.copy())
+                    for i, (tact1, tact2, tact3) in enumerate(zip(get_tacts(track1, tact_size), get_tacts(track2, tact_size), get_tacts(singles[n].tracks[0], tact_size))):
+                        try:
+                            if(bin(mask)[i+2] == '1'):
+                                if(check_tacts(tact3, tact1) >= score_filter):
+                                    add_tact(new_track, tact1)
+                                else:
+                                    break
+                            else:
+                                if(check_tacts(tact3, tact2) >= score_filter):
+                                    add_tact(new_track, tact2)
+                                else:
+                                    break
+                        except IndexError:
                             if(check_tacts(tact3, tact2) >= score_filter):
                                 add_tact(new_track, tact2)
-                    except IndexError:
-                        add_tact(new_track, tact2)
-                
-                if(track_info(new_track)[0] == track_size):
-                    print("len(new_track)", track_info(new_track))
-                    for single in singles[n:len(singles):step]:
-                        track = single.add_track("Acoustic Piano " + str(j))
-                        for msg in new_track:
-                            track.append(msg)
-                    n += 1
-                else:
-                    del singles[n]
-                if(mask % 1000 == 0):
+                            else:
+                                break
+
+                    
+
+                    if((len(singles[n].tracks)>0) and track_info(new_track)[0] == track_size):
+                        #singles[n].tracks.append(new_track.copy())
+                        n += 1
+                    else:
+                        del singles[n]
+                if(mask % 100 == 0):
                     print("n =", mask, "track2")
-                mask += 1
+                    
+            singles.remove(len(singles)-1)
     return singles
 
 
@@ -333,51 +342,40 @@ def main(argv=None):
     for track in single2.tracks:
         print(str(track),'\n')
         takts_check(track)
-    singles = сrossoverSigles4(single1,single2,1)
+    singles = сrossoverSigles4(single1,single2,3)
 
     print("Итоговое количество синглов", len(singles))
 
-    for msg in singles[len(singles)//2].play():
+    for msg in singles[0].play():
         port.send(msg)
         if(keyboard.is_pressed('esc')):  # пропустить проигрование трека
             break
+    for msg in singles[len(singles)//2].tracks[1]:
+        print(msg)
     return
-    #print("количество нот в блоке для скрещевания - ", numberOfNotes)
-    while (single1 is not None and single2 is not None):
-        singles = []
-        for i in range(0, 4):
-            print("single ",i)
-            singles.append(сrossoverSigles3(single1, single2, random.randint(2,10)))
-        
-        for i, single in enumerate(singles):
-            print("single - #", i)
-            time.sleep(3)
-            for j, msg in enumerate(single.play()):
-                port.send(msg)
-                if(keyboard.is_pressed('esc')): #пропустить проигрование трека
-                    break
-        qFlaf = True
-        while qFlaf:
-            print("Выбрать победителя? (Д/Н)")
-            s = input().lower()
-            if(s == 'д' or s == 'y'):
-                print("Выберете композицию и напишите номер")
-                try:
-                    single1 = singles[int(input())]
-                    single2 = None
-                except Exception:
-                    print("введите корректный номер")
-                    continue
-                break
-            print("Выберете 2 композиции и напишите их номер через пробел")
+    
+    qFlaf = True
+    while qFlaf:
+        print("Выбрать победителя? (Д/Н)")
+        s = input().lower()
+        if(s == 'д' or s == 'y'):
+            print("Выберете композицию и напишите номер")
             try:
-                (selectSingle1, selectSingle2) = list(map(int, input().split()))
+                single1 = singles[int(input())]
+                single2 = None
             except Exception:
-                print("выберете только 2 победителей")
+                print("введите корректный номер")
                 continue
-            single1 = singles[selectSingle1]
-            single2 = singles[selectSingle2]
-            qFlaf = False
+            break
+        print("Выберете 2 композиции и напишите их номер через пробел")
+        try:
+            (selectSingle1, selectSingle2) = list(map(int, input().split()))
+        except Exception:
+            print("выберете только 2 победителей")
+            continue
+        single1 = singles[selectSingle1]
+        single2 = singles[selectSingle2]
+        qFlaf = False
 
     print("winer!")
     print("Пропустить композицию - клавиша 'ESC'")
