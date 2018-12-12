@@ -248,6 +248,8 @@ def сrossoverSigles4(single1, single2,score_filter=0):
         else:
             n = 0
             step = int(j * tacts_num)
+            print("track2")
+            print("Для выхода из перебора нажмите на клавишу <esc>")
             for mask in range(1, mask_end + 1):
                 for t in range(0,mask_end):
                     new_track = singles[n].add_track("Acoustic Piano " + str(j))
@@ -273,13 +275,12 @@ def сrossoverSigles4(single1, single2,score_filter=0):
                                 break
 
                     if((len(singles[n].tracks)>0) and track_info(new_track)[0] == track_size):
-                        #singles[n].tracks.append(new_track.copy())
                         n += 1
                     else:
                         del singles[n]
                 if(mask % 100 == 0):
                     print("Track2: mask =", mask)
-                if(n>0 and n % 20 == 0):
+                if(n>0 and n % 10 == 0):
                     print("Track2: singles_size =", n)
                 if(keyboard.is_pressed('esc')):
                     keyboard.release('esc')
@@ -320,6 +321,7 @@ def main(argv=None):
         print(str(e))
         print("for help use --help")
         return 2
+        
     random.seed()
 
     port = mido.open_output(mido.get_output_names()[0])
@@ -334,29 +336,26 @@ def main(argv=None):
     print("single length ", single1.length)
     print("Beats:", beats(single1))
 
-    for track in single1.tracks:
-        print(str(track),'\n')
-        takts_check(track)
-    
     print(single2.filename)
     print("single length ", single2.length)
-
     print("Beats:",beats(single2))
-    for track in single2.tracks:
-        print(str(track),'\n')
-        takts_check(track)
+
     singles = сrossoverSigles4(single1,single2,2)
     time.sleep(2)
     print("Итоговое количество синглов", len(singles))
+    print("Для пропуска композиции нажмите на клавишу <esc>")
+    single = None
     if (len(singles) > 0):
-        print(len(singles[0].tracks))
-        for msg in singles[len(singles)//4*3].play():
+        single = singles[len(singles)//4*3]
+        for msg in single.play():
             port.send(msg)
             if(keyboard.is_pressed('esc')):  # пропустить проигрование трека
                 keyboard.release('esc')
                 break
+    single.save("winer_" + datetime.strftime(datetime.now(),
+                                              "%Y-%m-%d %H.%M.%S") + ".mid")
     print("Ожидание 'ESC'")
-    time.sleep(5)
+    time.sleep(3)
     keyboard.wait('esc')
     return
     
