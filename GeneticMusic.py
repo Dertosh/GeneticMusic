@@ -170,8 +170,9 @@ def change_time_signature(track, numerator, denominator):
         if(i>10):
             break
         
-
-            
+def add_tact(track,tact):
+    for msg in tact:
+        track.append(msg)
 
 
 def сrossoverSigles4(single1, single2):
@@ -186,24 +187,61 @@ def сrossoverSigles4(single1, single2):
         tacts_num, tact_size, numerator, denominator = single1_info1
     else:
         tacts_num, tact_size, numerator, denominator = single1_info2
-    mask = 0
-    mask_end = 2**tacts_num
-    for track1, track2 in zip(single1.tracks, single2.tracks):
+    print("tacts =",tacts_num)
+    mask_end = int(2**tacts_num - 1)
+    print("mask_end", mask_end)
+    singles = [mido.MidiFile() for i in range(mask_end)]
+    for j, (track1, track2) in enumerate(zip(single1.tracks, single2.tracks)):
+
         change_time_signature(track1,numerator,denominator)
-        print("track1")
-        for msg in track1[:5]:
-            print(msg)
-       
         change_time_signature(track2,numerator,denominator) 
-        print("track2")
-        for msg in track2[:5]:
-            print(msg)
-
-        for i, (tact1, tact2) in enumerate(zip(get_tacts(track1, tact_size), get_tacts(track2, tact_size))):
-            break
-
+        mask = 1
         
-    
+        if(j == 0):
+            n = int(0) 
+            n_end = int(tacts_num)
+            while (mask < len(singles)):
+                new_track=singles[int(mask-1)].add_track("Acoustic Piano " + str(j))
+                for i, (tact1, tact2) in enumerate(zip(get_tacts(track1, tact_size), get_tacts(track2, tact_size))):
+                    try:
+                        if(bin(mask)[i+2] == '1'):
+                            add_tact(new_track, tact1)
+                        else:
+                            add_tact(new_track, tact2)
+                    except IndexError:
+                        add_tact(new_track, tact2)
+                """ for single in singles:
+                    track = single.add_track("Acoustic Piano " + str(j))
+                    #for msg in newTrack:
+                    track.append(new_track) """
+                mask+=1
+                if(mask/tacts_num % 100 == 0):
+                    print("n =", mask, "track1")
+                n=n_end
+                n_end += tacts_num
+        else:
+            n = 0
+            n_end = int(tacts_num)
+            step = int(j * tacts_num)
+            while (mask < len(singles)):
+                new_track = singles[n].add_track("Acoustic Piano " + str(j))
+                for i, (tact1, tact2) in enumerate(zip(get_tacts(track1, tact_size), get_tacts(track2, tact_size))):
+                    try:
+                        if(str(mask)[i] == '1'):
+                            add_tact(new_track, tact1)
+                        else:
+                            add_tact(new_track, tact2)
+                    except IndexError:
+                        add_tact(new_track, tact2)
+                for single in singles[n:len(singles):step]:
+                    track = single.add_track("Acoustic Piano " + str(j))
+                    for msg in new_track:
+                        track.append(msg)
+                mask += 1
+                if(mask % 100 == 0):
+                    print("n =", mask, "track2")
+                n += 1
+    return singles
 
 
 def main(argv=None):
@@ -261,7 +299,12 @@ def main(argv=None):
     for track in single2.tracks:
         print(str(track),'\n')
         takts_check(track)
-    сrossoverSigles4(single1,single2)
+    singles = сrossoverSigles4(single1,single2)
+    for msg in singles[1000].play():
+        port.send(msg)
+        if(keyboard.is_pressed('esc')):  # пропустить проигрование трека
+            break
+
     #print("количество нот в блоке для скрещевания - ", numberOfNotes)
     while (single1 is not None and single2 is not None):
         singles = []
