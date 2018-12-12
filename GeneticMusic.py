@@ -176,7 +176,7 @@ def add_tact(track,tact):
 
 
 def get_notes(tact):
-    arr = list()
+    arr = []
     for msg in tact:
         if(hasattr(msg, "note") and msg.note not in arr):
             arr.append(msg.note)
@@ -197,9 +197,9 @@ def check_tacts(tact1,tact2):
             score+=1
     return score
 
-def copy_track(to_track, from_track):
+''' def copy_track(to_track, from_track):
     for msg in to_track:
-        from_track.append(msg)
+        from_track.append(msg) '''
 
 def сrossoverSigles4(single1, single2,score_filter=0):
     """Равномерное скрещивание"""
@@ -250,10 +250,10 @@ def сrossoverSigles4(single1, single2,score_filter=0):
             step = int(j * tacts_num)
             for mask in range(1, mask_end + 1):
                 for t in range(0,mask_end):
-                    temp_track = singles[n].tracks[0]
                     new_track = singles[n].add_track("Acoustic Piano " + str(j))
                     singles.append(mido.MidiFile())
-                    singles[len(singles)-1].tracks.append(temp_track.copy())
+                    temp_track = singles[n].tracks[0]
+                    singles[len(singles)-1].tracks.append(temp_track)
                     for i, (tact1, tact2, tact3) in enumerate(zip(get_tacts(track1, tact_size), get_tacts(track2, tact_size), get_tacts(singles[n].tracks[0], tact_size))):
                         try:
                             if(bin(mask)[i+2] == '1'):
@@ -272,17 +272,20 @@ def сrossoverSigles4(single1, single2,score_filter=0):
                             else:
                                 break
 
-                    
-
                     if((len(singles[n].tracks)>0) and track_info(new_track)[0] == track_size):
                         #singles[n].tracks.append(new_track.copy())
                         n += 1
                     else:
                         del singles[n]
                 if(mask % 100 == 0):
-                    print("n =", mask, "track2")
+                    print("Track2: mask =", mask)
+                if(n>0 and n % 20 == 0):
+                    print("Track2: singles_size =", n)
+                if(keyboard.is_pressed('esc')):
+                    keyboard.release('esc')
+                    break
                     
-            singles.remove(len(singles)-1)
+            del singles[n:len(singles)]
     return singles
 
 
@@ -342,16 +345,19 @@ def main(argv=None):
     for track in single2.tracks:
         print(str(track),'\n')
         takts_check(track)
-    singles = сrossoverSigles4(single1,single2,3)
-
+    singles = сrossoverSigles4(single1,single2,2)
+    time.sleep(2)
     print("Итоговое количество синглов", len(singles))
-
-    for msg in singles[0].play():
-        port.send(msg)
-        if(keyboard.is_pressed('esc')):  # пропустить проигрование трека
-            break
-    for msg in singles[len(singles)//2].tracks[1]:
-        print(msg)
+    if (len(singles) > 0):
+        print(len(singles[0].tracks))
+        for msg in singles[len(singles)//4*3].play():
+            port.send(msg)
+            if(keyboard.is_pressed('esc')):  # пропустить проигрование трека
+                keyboard.release('esc')
+                break
+    print("Ожидание 'ESC'")
+    time.sleep(5)
+    keyboard.wait('esc')
     return
     
     qFlaf = True
