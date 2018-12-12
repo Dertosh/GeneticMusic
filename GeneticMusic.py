@@ -11,83 +11,6 @@ import keyboard
 import mido
 import math
 
-def сrossoverSigles(single1, single2, numberOfNotes):
-    newSingle = mido.MidiFile()
-    notesSwitcher = numberOfNotes
-    for i, (track1, track2) in enumerate(zip(single1.tracks, single2.tracks)):
-        if(track1 is None or track1 is None):
-            break
-        newTrack = newSingle.add_track("Acoustic Piano " + str(i))
-        flag = random.random()
-        for j, (msg1, msg2) in enumerate(zip(track1, track2)):
-            ''' if(msg1.tempo > msg2("tempo")):
-                print("msg1:", msg1)
-                print("msg2:", msg2)
-                newTrack.append(msg2)
-                continue
-            else:
-                newTrack.append(msg1)
-                continue '''
-            if(msg1 is None or msg2 is None):
-                break
-            if(flag):
-                newTrack.append(msg1)
-            else:
-                newTrack.append(msg2)
-            if(j >= notesSwitcher and msg1.type == 'note_on'):
-                #print("split ",notesSwitcher)
-                notesSwitcher = j + numberOfNotes
-                flag = not flag
-    return newSingle
-
-def сrossoverSigles2(single1, single2, numberOfNotes):
-    newSingle = mido.MidiFile()
-    for i, (track1, track2) in enumerate(zip(single1.tracks, single2.tracks)):
-        if(track1 is None or track1 is None):
-            break
-        newTrack = newSingle.add_track("Acoustic Piano " + str(i))
-        #print(newTrack.name)
-        flag = random.random()
-        for j, (msg1, msg2) in enumerate(zip(track1, track2)):
-            if(msg1 is None or msg2 is None):
-                break
-            if(flag):
-                newTrack.append(msg1)
-                #print(msg1)
-            else:
-                newTrack.append(msg2)
-                #print(msg2)
-            if(numberOfNotes != -1 and j >= numberOfNotes):
-                print("switch", numberOfNotes)
-                flag = not flag
-                numberOfNotes = -1
-            
-    return newSingle
-
-#Равномерное скрещивание
-def сrossoverSigles3(single1, single2, numberOfNotes):
-    newSingle = mido.MidiFile()
-    print("switch", numberOfNotes)
-    for i, (track1, track2) in enumerate(zip(single1.tracks, single2.tracks)):
-        if(track1 is None or track1 is None):
-            break
-        newTrack = newSingle.add_track("Acoustic Piano " + str(i))
-        flag = random.random()
-        print("track ",i)
-        for j, (msg1, msg2) in enumerate(zip(track1, track2)):
-            if(msg1 is None or msg2 is None):
-                break
-            if(flag):
-                newTrack.append(msg1)
-                #print(msg1)
-            else:
-                newTrack.append(msg2)
-                #print(msg2)
-            if(j>10 and not (j % numberOfNotes)and random.random()):#меняем дорожку после каждого j вызова
-                flag = not flag
-            
-    return newSingle
-
 def track_info(track, debug=False):
     time_sum = 0
     sign = None
@@ -201,7 +124,7 @@ def check_tacts(tact1,tact2):
     for msg in to_track:
         from_track.append(msg) '''
 
-def сrossoverSigles4(single1, single2,score_filter=0):
+def сrossover_sigles(single1, single2,score_filter=0):
     """Равномерное скрещивание"""
     tact_size = 0 #размер такта
     tacts_num = 0 #количество тактов
@@ -340,7 +263,8 @@ def main(argv=None):
     print("single length ", single2.length)
     print("Beats:",beats(single2))
 
-    singles = сrossoverSigles4(single1,single2,3)
+    singles = сrossover_sigles(single1,single2,3) # Равномерное скрещивание по тактам 
+
     time.sleep(2)
     print("Итоговое количество синглов", len(singles))
     print("Для пропуска композиции нажмите на клавишу <esc>")
@@ -360,38 +284,6 @@ def main(argv=None):
     time.sleep(3)
     keyboard.wait('esc')
     return
-    
-    qFlaf = True
-    while qFlaf:
-        print("Выбрать победителя? (Д/Н)")
-        s = input().lower()
-        if(s == 'д' or s == 'y'):
-            print("Выберете композицию и напишите номер")
-            try:
-                single1 = singles[int(input())]
-                single2 = None
-            except Exception:
-                print("введите корректный номер")
-                continue
-            break
-        print("Выберете 2 композиции и напишите их номер через пробел")
-        try:
-            (selectSingle1, selectSingle2) = list(map(int, input().split()))
-        except Exception:
-            print("выберете только 2 победителей")
-            continue
-        single1 = singles[selectSingle1]
-        single2 = singles[selectSingle2]
-        qFlaf = False
-
-    print("winer!")
-    print("Пропустить композицию - клавиша 'ESC'")
-    for msg in single1.play():
-        port.send(msg)
-        if(keyboard.is_pressed('esc')):
-            break
-    single1.save("winer_" + datetime.strftime(datetime.now(),
-                                            "%Y-%m-%d %H.%M.%S") + ".mid")
 
 if __name__ == "__main__":
     exit(main())
